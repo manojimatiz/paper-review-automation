@@ -646,3 +646,8 @@ details.inline > summary::-webkit-details-marker { display: none; }
 .btn.danger:hover {
   background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 50%, transparent);
 }
+
+.app-footer {
+  text-align: center; color: var(--muted); font-size: 12px;
+  padding: 20px 0 12px;
+}

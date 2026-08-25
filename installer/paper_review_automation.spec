@@ -34,6 +34,10 @@ COMMON_DATAS = [
     (str(PROJECT_ROOT / "config.example.toml"), "."),
 ]
 
+# Bundled into every exe (not just COMMON_DATAS' service-only set) since
+# paper_automation.__version__ is read by all five entry points.
+VERSION_DATA = [(str(PROJECT_ROOT / "VERSION"), ".")]
+
 COMMON_HIDDENIMPORTS = [
     "flask", "flask_login", "waitress", "werkzeug.security",
     "pystray", "pystray._win32", "PIL", "PIL.Image", "PIL.ImageDraw",
@@ -58,7 +62,7 @@ def analysis(script: str, datas=None):
         [str(PROJECT_ROOT / script)],
         pathex=[str(PROJECT_ROOT)],
         binaries=[],
-        datas=datas or [],
+        datas=(datas or []) + VERSION_DATA,
         hiddenimports=COMMON_HIDDENIMPORTS,
         hookspath=[],
         hooksconfig={},

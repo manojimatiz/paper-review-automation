@@ -32,9 +32,12 @@ import time
 import webbrowser
 from pathlib import Path
 
+import paper_automation
+
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_PORT = 5000
 APP_NAME = "Paper Review Automation"
+APP_NAME_WITH_VERSION = f"{APP_NAME} v{paper_automation.__version__}"
 
 # Defensive: pythonw.exe as the target shouldn't need this, but if _pythonw()
 # ever falls back to a console-mode interpreter (e.g. pythonw.exe missing
@@ -175,10 +178,12 @@ def build_icon(controller: ServerController):
         MenuItem("Open dashboard", open_dashboard),
         MenuItem(toggle_text, toggle),
         MenuItem(status_text, None, enabled=False),
+        MenuItem(f"v{paper_automation.__version__}", None, enabled=False),
         MenuItem("Exit", quit_app),
     )
     return pystray.Icon(
-        "paper_review_automation", _icon_image(controller.running), APP_NAME, menu
+        "paper_review_automation", _icon_image(controller.running),
+        APP_NAME_WITH_VERSION, menu
     )
 
 

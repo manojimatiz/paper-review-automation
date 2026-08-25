@@ -15,7 +15,10 @@
 ; the exes and leaves accounts/job history/config alone.
 
 #define MyAppName "Paper Review Automation"
-#define MyAppVersion "1.0.0"
+; Single source of truth: paper_automation/__init__.py reads this same file
+; at runtime, so the installer version and the running app's version can
+; never drift apart.
+#define MyAppVersion Trim(FileRead(FileOpen(SourcePath + "..\VERSION")))
 #define MyAppPublisher "iMatiz"
 #define MyAppExeName "PaperReviewAutomation.exe"
 #define DistDir "..\dist\PaperReviewAutomation"

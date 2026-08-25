@@ -52,6 +52,7 @@ from flask_login import (
     LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 )
 
+import paper_automation
 from paper_automation import auth
 from paper_automation import config as config_module
 from paper_automation import service
@@ -172,7 +173,12 @@ def _inject_user():
     pending = 0
     if auth_enabled() and user.is_admin:
         pending = sum(1 for a in auth.list_users(_state_db()) if not a.approved and not a.disabled)
-    return {"user": user, "auth_on": auth_enabled(), "pending_users": pending}
+    return {
+        "user": user,
+        "auth_on": auth_enabled(),
+        "pending_users": pending,
+        "app_version": paper_automation.__version__,
+    }
 
 
 def current_config():
