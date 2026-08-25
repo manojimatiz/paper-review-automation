@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-head"><h1>Configuration problem</h1></div>
+  <div class="note err">{{ i.icon('alert', 17) }}<span>{{ message }}</span></div>
+  <p class="hint">
+    The pipeline reads <code>config.toml</code> in the project folder. If this is a fresh install,
+    copy <code>config.example.toml</code> to <code>config.toml</code> and set your papers folder.
+  </p>
+</section>
+
+{% endblock %}

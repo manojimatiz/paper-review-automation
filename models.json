@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "Extra models offered in the Settings dropdowns, on top of the built-in list.",
+    "Edit this file to add a model permanently, or just type a model name into the",
+    "'Other' box in Settings and it will be added here automatically.",
+    "",
+    "Each entry: id (what is passed to --model), label (shown in the dropdown),",
+    "note (the small grey text), alias (true if it always tracks the newest model",
+    "in its family), tier (1 fastest/cheapest .. 3 most capable).",
+    "",
+    "Prefer an alias such as 'opus' or 'sonnet' over a pinned id: aliases follow the",
+    "newest model automatically, so nothing here needs updating when one ships."
+  ],
+  "claude": [],
+  "codex": []
+}

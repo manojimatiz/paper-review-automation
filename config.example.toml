@@ -1,0 +1,118 @@
+# Research paper automation — configuration
+#
+# Copy this file to config.toml and set research_papers_root.
+# Relative paths are resolved against this file's directory, so a scheduled run
+# does not depend on whatever working directory it inherits.
+
+# The folder that CONTAINS the "<Month Year>" directories.
+# This is the "give it access to the folder" step — nothing else is needed.
+# Windows paths: use forward slashes or escape backslashes.
+research_papers_root = "C:/Users/user/OneDrive/Desktop/Research Papers"
+
+# Used to decide which month folder is "current", independent of machine timezone.
+timezone = "Asia/Kolkata"
+
+# What the models are asked to do.
+#   "grammar" — language-only: find grammar mistakes, then produce a corrected
+#               paper with nothing else changed. Cheap; use this while testing.
+#   "full"    — Q1 journal review, then a full scientific revision. Expensive.
+task_mode = "grammar"
+
+# Which extensions count as a research paper. Anything else in a client folder
+# is ignored rather than mistaken for the manuscript.
+supported_extensions = [".docx"]
+
+# If the current month's folder does not exist yet, leave it alone and skip
+# the run (false, the default) or create an empty one and continue (true).
+# Employee and client folders can also be created on demand from the web UI's
+# "Add a folder" panel (admin/manager only), regardless of this setting.
+create_missing_month = false
+
+# "local" covers both a plain local folder and a Google-Drive-for-Desktop synced
+# folder — a synced Drive folder is just a local path, so no special handling is
+# needed. "gdrive" (a direct Drive API backend) is reserved for a future release
+# and is rejected at startup for now.
+storage_backend = "local"
+
+state_db = "state/processing.sqlite3"
+log_dir = "logs"
+
+# Where "py run.py --backup-now" writes timestamped copies of state_db (job
+# history, saved prompts, and web-UI accounts all live in that one file).
+# Old backups are never deleted automatically — clear them by hand once in a
+# while, the same as scratch_dir's old run folders.
+backup_dir = "state/backups"
+
+# Working directory for the per-paper markdown handed to the models. Leave empty to
+# use %USERPROFILE%\PaperAutomation\scratch, which is the recommended setting.
+#
+# If you do change it, it must NOT be under AppData. Codex's Windows sandbox refuses
+# to grant write access there and fails with "no writable root capability SIDs".
+# %USERPROFILE%\... and %USERPROFILE%\Documents\... are both known to work. Keeping it
+# out of OneDrive also stops the sync client touching files mid-run.
+scratch_dir = ""
+
+# Scan and report decisions without creating or modifying anything.
+dry_run = false
+
+# Process only the first employee and first client, using a mock model.
+test_mode = false
+
+max_retries = 3
+retry_base_delay = 5.0
+
+# How many client folders a phase processes at once. 1 (default) is today's
+# sequential behaviour, running one CLI subprocess at a time. Raising it runs
+# that many Codex/Claude subprocesses concurrently within a single phase; the
+# review phase still always finishes in full before any revision starts.
+max_concurrent_jobs = 1
+
+# Only used by "py run.py --loop" (see scripts/register_task.ps1 for how Task
+# Scheduler starts it). Ignored by a normal one-shot "py run.py". The process
+# stays resident, rescanning every scan_interval_minutes, and stops starting
+# new work once schedule_end passes — anything already running is left to
+# finish, never killed.
+schedule_start = "09:00"
+schedule_end = "18:00"
+scan_interval_minutes = 15
+
+# SECURITY: the web control panel (py ui.py / tray_app.py) refuses to bind to
+# anything other than 127.0.0.1 until at least one login exists (created with
+# manage_users.py or the web UI's own /signup + approval) — with no accounts,
+# an exposed panel would have no access control at all. This example ships
+# "0.0.0.0" (reachable from other PCs on the network) on the assumption a
+# real deployment wants that; set it back to "127.0.0.1" to keep the panel on
+# this PC only. See README's "Sharing the panel on your network" for the
+# full LAN-access checklist (accounts, Firewall, the tray/autostart setup).
+web_host = "0.0.0.0"
+
+
+[providers.codex]
+# Leave binary_path empty to auto-discover the Codex app's bundled binary.
+# Set it only to pin a specific build.
+binary_path = ""
+model = ""
+extra_args = []
+timeout_seconds = 1800
+
+[providers.claude]
+binary_path = ""
+model = ""
+extra_args = []
+timeout_seconds = 1800
+
+
+[notify]
+enabled = false
+# Any of: "email", "telegram", "slack", "teams"
+channels = []
+
+# Secrets are read from environment variables in preference to this file:
+#   SMTP_PASSWORD, TELEGRAM_BOT_TOKEN, SLACK_WEBHOOK_URL, TEAMS_WEBHOOK_URL
+smtp_host = ""
+smtp_port = 587
+smtp_user = ""
+email_from = ""
+email_to = []
+
+telegram_chat_id = ""

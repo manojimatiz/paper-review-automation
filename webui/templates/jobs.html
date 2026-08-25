@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block title %}Jobs — Paper Review Automation{% endblock %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h1>{{ i.icon('cpu', 18) }} System status</h1>
+      <p class="sub">A quick look at whether everything the automation depends on is working.</p>
+    </div>
+  </div>
+  <div class="health-grid">
+    <div class="health-item {{ 'ok' if health.storage_ok else 'bad' }}">
+      {{ i.icon('folder', 16) }}
+      <div>
+        <strong>Storage</strong>
+        <span>{{ 'Connected' if health.storage_ok else 'Not found' }}</span>
+      </div>
+    </div>
+    <div class="health-item {{ 'ok' if health.automation_running else 'idle' }}">
+      {{ i.icon('play', 16) }}
+      <div>
+        <strong>Automation</strong>
+        <span>{{ 'Running now' if health.automation_running else 'Idle' }}</span>
+      </div>
+    </div>
+    <div class="health-item {{ 'ok' if health.scheduler_enabled else 'idle' }}">
+      {{ i.icon('clock', 16) }}
+      <div>
+        <strong>Daily schedule</strong>
+        <span>
+          {% if health.scheduler_enabled %}On{% if health.scheduler_next_run %} · next {{ health.scheduler_next_run }}{% endif %}
+          {% else %}Off{% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="health-item ok">
+      {{ i.icon('cpu', 16) }}
+      <div>
+        <strong>Workers</strong>
+        <span>{{ health.max_concurrent_jobs }} at a time</span>
+      </div>
+    </div>
+    <div class="health-item {{ 'bad' if health.lan_reachable else 'idle' }}">
+      {{ i.icon('alert' if health.lan_reachable else 'check', 16) }}
+      <div>
+        <strong>Network</strong>
+        <span>{{ 'Reachable from the network (' + health.web_host + ')' if health.lan_reachable else 'This PC only' }}</span>
+      </div>
+    </div>
+    <div class="health-item idle">
+      {{ i.icon('doc', 16) }}
+      <div>
+        <strong>Logs on disk</strong>
+        <span>{{ health.log_file_count }} file{{ 's' if health.log_file_count != 1 }}</span>
+      </div>
+    </div>
+    <div class="health-item idle">
+      {{ i.icon('history', 16) }}
+      <div>
+        <strong>Job history size</strong>
+        <span>{{ health.state_db_size_label }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" style="margin-top:14px;">
+    <button type="button" class="btn" id="btnBackup">{{ i.icon('check', 15) }} Back up now</button>
+    <span class="muted" id="backupMsg">Last backup: {{ health.last_backup_label }}</span>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('inbox', 17) }} Jobs</h2>
+      <p class="sub">Every processing attempt, most recent first.</p>
+    </div>
+  </div>
+
+  <div class="job-filters">
+    <a href="{{ url_for('jobs') }}" class="chip {{ 'on' if not data.filter }}">
+      All <span class="tnum">{{ data.total }}</span>
+    </a>
+    {% for status, count in data.counts.items() %}
+      <a href="{{ url_for('jobs', status=status) }}" class="chip {{ 'on' if data.filter == status }}">
+        {{ {'QUEUED': 'Waiting', 'REVIEW_IN_PROGRESS': 'Checking', 'REVISION_IN_PROGRESS': 'Correcting', 'REVIEW_COMPLETED': 'Checked', 'COMPLETED': 'Done', 'REQUIRES_HUMAN_REVIEW': 'Needs a look', 'FAILED': 'Failed', 'CANCELLED': 'Cancelled'}.get(status, status) }}
+        <span class="tnum">{{ count }}</span>
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if not data.jobs %}
+    <p class="empty">No jobs recorded yet.</p>
+  {% else %}
+    <div class="table-scroll">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Employee</th><th>Client</th><th>Step</th><th>Status</th>
+            <th>Attempts</th><th>Started</th><th>Finished</th><th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in data.jobs %}
+            <tr>
+              <td>{{ job.employee }}</td>
+              <td>{{ job.client }}</td>
+              <td>{{ job.phase_label }} <span class="muted">({{ job.provider }})</span></td>
+              <td><span class="state-{{ job.status }}">{{ job.status_label }}</span></td>
+              <td class="tnum">{{ job.attempts }}</td>
+              <td class="muted">{{ job.started_at or '—' }}</td>
+              <td class="muted">{{ job.finished_at or '—' }}</td>
+              <td class="reason">{{ job.reason or '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const backupBtn = document.getElementById('btnBackup');
+  if (backupBtn) {
+    backupBtn.addEventListener('click', async () => {
+      backupBtn.disabled = true;
+      const msg = document.getElementById('backupMsg');
+      msg.textContent = 'Backing up…';
+      const res = await postJSON('/api/backup', {});
+      msg.textContent = res.message;
+      backupBtn.disabled = false;
+    });
+  }
+</script>
+{% endblock %}

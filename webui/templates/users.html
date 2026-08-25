@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block title %}Users — Paper Review Automation{% endblock %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h1>{{ i.icon('inbox', 18) }} Users</h1>
+      <p class="sub">Everyone with access, and every pending request waiting on you.</p>
+    </div>
+  </div>
+
+  {% if message %}<div class="note ok">{{ i.icon('check', 17) }}<span>{{ message }}</span></div>{% endif %}
+  {% if error %}<div class="note err">{{ i.icon('alert', 17) }}<span>{{ error }}</span></div>{% endif %}
+
+  {% set pending = accounts|selectattr('approved', 'equalto', False)|selectattr('disabled', 'equalto', False)|list %}
+  {% if pending %}
+    <h2 class="section-sub">Pending requests</h2>
+    <div class="table-scroll">
+      <table class="grid">
+        <thead>
+          <tr><th>Name</th><th>Requested role</th><th>Employee</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for a in pending %}
+            <tr class="{{ 'flag-admin' if a.role.value == 'ADMIN' }}">
+              <td>{{ a.username }}</td>
+              <td>
+                {{ 'Admin' if a.role.value == 'ADMIN' else 'User' }}
+                {% if a.role.value == 'ADMIN' %}<span class="tag" style="color:var(--bad);border-color:color-mix(in srgb, var(--bad) 30%, transparent);">requested Admin</span>{% endif %}
+              </td>
+              <td>{{ a.employee or '—' }}</td>
+              <td class="inline">
+                <form method="post" class="inline">
+                  <input type="hidden" name="username" value="{{ a.username }}">
+                  <button type="submit" name="action" value="approve" class="btn small primary">Approve</button>
+                </form>
+                <form method="post" class="inline">
+                  <input type="hidden" name="username" value="{{ a.username }}">
+                  <button type="submit" name="action" value="reject" class="btn small">Reject</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <h2 class="section-sub">All accounts</h2>
+  <div class="table-scroll">
+    <table class="grid">
+      <thead>
+        <tr><th>Name</th><th>Role</th><th>Employee</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for a in accounts %}
+          <tr>
+            <td>{{ a.username }}</td>
+            <td>{{ 'Admin' if a.role.value == 'ADMIN' else 'User' }}</td>
+            <td>{{ a.employee or '—' }}</td>
+            <td>
+              {% if not a.approved and not a.disabled %}<span class="pill empty">Pending</span>
+              {% elif a.disabled %}<span class="pill blocked">Disabled</span>
+              {% else %}<span class="pill complete">Active</span>{% endif %}
+            </td>
+            <td class="inline">
+              {% if a.approved %}
+                <form method="post" class="inline">
+                  <input type="hidden" name="username" value="{{ a.username }}">
+                  <button type="submit" name="action" value="{{ 'enable' if a.disabled else 'disable' }}" class="btn small">
+                    {{ 'Enable' if a.disabled else 'Disable' }}
+                  </button>
+                </form>
+                <form method="post" class="inline">
+                  <input type="hidden" name="username" value="{{ a.username }}">
+                  <button type="submit" name="action" value="reset-password" class="btn small">Reset password</button>
+                </form>
+                <details class="inline">
+                  <summary class="btn small">Rename</summary>
+                  <form method="post" class="rename-form">
+                    <input type="hidden" name="username" value="{{ a.username }}">
+                    <input type="text" name="new_username" placeholder="New name" required>
+                    <button type="submit" name="action" value="rename" class="btn small primary">Save</button>
+                  </form>
+                </details>
+                <form method="post" class="inline"
+                      onsubmit="return confirm('Delete {{ a.username }}? This cannot be undone.');">
+                  <input type="hidden" name="username" value="{{ a.username }}">
+                  <button type="submit" name="action" value="delete" class="btn small danger">Delete</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('play', 17) }} Add a user directly</h2>
+      <p class="sub">
+        Optional — skips the request queue and is active immediately with the
+        default password, since you're vouching for it yourself.
+      </p>
+    </div>
+  </div>
+  <form method="post" class="start-row" id="addUserForm">
+    <input type="hidden" name="action" value="add">
+    <input type="text" name="username" placeholder="Name" required>
+    <select name="role" id="addUserRole">
+      <option value="WRITER">User</option>
+      <option value="ADMIN">Admin</option>
+    </select>
+    <input type="text" name="employee" id="addUserEmployee" placeholder="Employee folder name">
+    <button type="submit" class="btn primary">{{ i.icon('check', 15) }} Create</button>
+  </form>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var role = document.getElementById('addUserRole');
+    var employee = document.getElementById('addUserEmployee');
+    if (!role || !employee) return;
+    function sync() {
+      var needed = role.value === 'WRITER';
+      employee.required = needed;
+      employee.style.display = needed ? '' : 'none';
+    }
+    role.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+{% endblock %}

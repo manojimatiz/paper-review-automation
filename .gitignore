@@ -1,0 +1,27 @@
+config.toml
+logs/
+state/
+scratch/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# PyInstaller build output (installer/paper_review_automation.spec regenerates
+# these) — large binaries don't belong in git history; the installer .exe is
+# published as a GitHub Release asset instead. dist/ also briefly held
+# throwaway smoke-test artifacts during development.
+build/
+dist/
+
+# Real client research papers (this machine's configured research_papers_root
+# happens to live inside the project folder) — actual client manuscripts,
+# reviews, and corrected papers must never enter version control.
+Papers/
+
+# Claude Code's own local/session files, not part of the project.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Stray empty files (accidental shell redirects from an earlier session), not source.
+/py
+/would

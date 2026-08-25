@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block content %}
+
+{% if not data.root_exists %}
+  <div class="banner bad">
+    <div class="b-in">
+      {{ i.icon('alert', 20) }}
+      <div>
+        <strong>Can't find your papers folder</strong>
+        <span>Looked in: {{ data.root }}</span>
+      </div>
+    </div>
+    {% if user.can_control_runs %}
+      <a class="btn small" href="{{ url_for('settings') }}">Choose the right folder</a>
+    {% endif %}
+  </div>
+{% elif not data.month_exists %}
+  <div class="banner warn">
+    <div class="b-in">
+      {{ i.icon('calendar', 20) }}
+      <div>
+        <strong>No folder for {{ data.month }} yet</strong>
+        <span>Create one inside your papers folder, or pick a different month.</span>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<section class="panel hero">
+  <div class="panel-head">
+    <div>
+      <h1>{{ data.month }}</h1>
+      <p class="sub">Papers found in this month's folders.</p>
+    </div>
+    <form method="get" class="inline">
+      <label class="visually-hidden" for="monthPick">Month</label>
+      <select id="monthPick" name="month" onchange="this.form.submit()">
+        {% for m in data.months %}
+          <option value="{{ m }}" {{ 'selected' if m == data.month }}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div class="tiles">
+    <div class="tile ready">
+      <span class="cap">{{ i.icon('search', 17) }}</span>
+      <span class="n tnum">{{ data.counts.READY_REVIEW }}</span>
+      <span class="l">Waiting to be checked</span>
+    </div>
+    <div class="tile revise">
+      <span class="cap">{{ i.icon('wand', 17) }}</span>
+      <span class="n tnum">{{ data.counts.READY_REVISE }}</span>
+      <span class="l">Waiting for corrections</span>
+    </div>
+    <div class="tile done">
+      <span class="cap">{{ i.icon('check', 17) }}</span>
+      <span class="n tnum">{{ data.counts.COMPLETE }}</span>
+      <span class="l">Done</span>
+    </div>
+    <div class="tile block">
+      <span class="cap">{{ i.icon('alert', 17) }}</span>
+      <span class="n tnum">{{ data.counts.BLOCKED }}</span>
+      <span class="l">Need your attention</span>
+    </div>
+    <div class="tile idle">
+      <span class="cap">{{ i.icon('inbox', 17) }}</span>
+      <span class="n tnum">{{ data.counts.EMPTY }}</span>
+      <span class="l">No paper yet</span>
+    </div>
+  </div>
+</section>
+
+{% if user.can_control_runs %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('play', 17) }} Start working</h2>
+      <p class="sub">
+        {% if data.task_mode == 'grammar' %}
+          Papers are checked for spelling and grammar only.
+        {% else %}
+          Papers get a full expert review, then a rewritten version.
+        {% endif %}
+        <a href="{{ url_for('settings') }}#models">Change this</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="start-row">
+    <button class="btn primary big" id="btnStart">{{ i.icon('play', 16) }} Start</button>
+    <button class="btn" id="btnPreview">{{ i.icon('eye', 16) }} What will happen?</button>
+
+    <details class="opts">
+      <summary>{{ i.icon('settings', 14) }} More options</summary>
+      <div class="opts-body">
+        <label>
+          <span>How much to do</span>
+          <select id="phase">
+            <option value="both">Everything — check, then correct</option>
+            <option value="review">Only check for mistakes</option>
+            <option value="revise">Only make corrected copies</option>
+          </select>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="testMode">
+          <span>Just try one paper first</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="mockMode">
+          <span>Practice run — creates example files without using your AI allowance</span>
+        </label>
+      </div>
+    </details>
+  </div>
+
+  <p class="callout" id="estimate" hidden></p>
+
+  <div id="progressWrap" class="run-view" hidden>
+    <div class="run-head">
+      <span class="spinner" id="spinner"></span>
+      <div>
+        <strong id="headline">Getting started…</strong>
+        <p class="sub" id="stepLabel"></p>
+      </div>
+      <span class="counter tnum" id="progressCount"></span>
+      <span class="remaining" id="remaining" hidden></span>
+    </div>
+
+    <div class="bar"><div class="fill" id="progressFill"></div></div>
+
+    <p class="token-meter" id="tokenMeter" hidden></p>
+
+    <ul class="results" id="results"></ul>
+    <div class="outcomes" id="outcomes" hidden></div>
+
+    <details class="tech" id="techWrap">
+      <summary>Technical details</summary>
+      <pre class="logbox" id="logbox"></pre>
+    </details>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('folder', 17) }} Add a folder</h2>
+      <p class="sub">
+        Creates an empty folder for a new employee, or a new client under one
+        that already exists — nothing here is ever deleted or moved.
+      </p>
+    </div>
+  </div>
+  <form id="addFolderForm" class="start-row">
+    <input type="text" id="folderMonth" placeholder="Month, e.g. August 2026"
+           value="{{ data.month }}" required>
+    <input type="text" id="folderEmployee" placeholder="Employee name" required>
+    <input type="text" id="folderClient" placeholder="Client name (leave blank for just the employee)">
+    <button type="submit" class="btn primary">{{ i.icon('folder', 15) }} Create</button>
+  </form>
+  <p class="hint" id="addFolderMsg"></p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('folder', 17) }} Your papers</h2>
+      <p class="sub">Click any file to open it.</p>
+    </div>
+  </div>
+
+  {% if not data.rows %}
+    <p class="empty">Nothing found for {{ data.month }} yet.</p>
+  {% else %}
+    <div class="cards">
+      {% for row in data.rows %}
+        <article class="card {{ row.status|lower }}">
+          <header>
+            <div>
+              <strong>{{ row.client }}</strong>
+              <p class="sub">{{ row.employee }}</p>
+            </div>
+            <span class="pill {{ row.status|lower }}">{{ row.status_label }}</span>
+          </header>
+          <p class="what">{{ row.action }}</p>
+          {% if row.reason %}<p class="why">{{ row.reason }}</p>{% endif %}
+          <div class="files">
+            {% for f in row.files %}
+              {% set word = {'original':'Original paper','review':'What was found','final':'Corrected copy'}[f.role] %}
+              {% if can_open %}
+                <button class="filelink {{ f.role }}" data-path="{{ f.path }}">
+                  {{ i.icon('doc', 16) }}
+                  <span class="txt">
+                    <span class="fileword">{{ word }}</span>
+                    <span class="filename">{{ f.name }}</span>
+                  </span>
+                </button>
+              {% else %}
+                <span class="filelink {{ f.role }}">
+                  {{ i.icon('doc', 16) }}
+                  <span class="txt">
+                    <span class="fileword">{{ word }}</span>
+                    <span class="filename">{{ f.name }}</span>
+                  </span>
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="muted">No files yet</span>
+            {% endfor %}
+          </div>
+          {% if row.ignored %}
+            <p class="why">Ignored: {{ row.ignored|join(', ') }}</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+{% if user.can_control_runs %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('cpu', 17) }} Which AI is used</h2>
+      <p class="sub">Two different AIs: one finds the problems, the other fixes them.</p>
+    </div>
+    <a class="btn small" href="{{ url_for('settings') }}#models">Change</a>
+  </div>
+  <div class="models">
+    {% for m in models.stages %}
+      <div class="model-card {{ 'off' if not m.available }}">
+        <div class="model-top">
+          {{ i.icon('search' if m.provider == 'codex' else 'wand', 16) }}
+          <span class="model-stage">{{ 'Finds the mistakes' if m.provider == 'codex' else 'Writes the corrections' }}</span>
+          <span class="model-role">{{ m.role }}</span>
+        </div>
+        <div class="model-id">
+          {{ m.effective }}
+          {% if m.pinned %}<span class="tag pin">you chose this</span>
+          {% else %}<span class="tag auto">automatic</span>{% endif %}
+        </div>
+        <div class="model-meta">
+          {% if m.available %}
+            <span>App version {{ m.version }}</span>
+          {% else %}
+            <span class="bad-text">Not installed, or not signed in.</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if user.can_control_runs %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('clock', 17) }} Run automatically every day</h2>
+      <p class="sub">Your computer must be switched on and signed in at that time.</p>
+    </div>
+  </div>
+  <div class="controls">
+    <span class="pill {{ 'complete' if schedule.enabled else 'empty' }}">
+      {{ 'On' if schedule.enabled else 'Off' }}
+    </span>
+    {% if schedule.next_run %}<span class="muted">Next: {{ schedule.next_run }}</span>{% endif %}
+
+    <label>Time
+      <input type="time" id="scheduleAt"
+             value="{{ schedule.time }}" data-original="{{ schedule.time }}">
+    </label>
+
+    {# Appears only once the time is actually changed, so there is always a clear
+       way to commit it — the on/off button would otherwise be the only control,
+       and pressing it while the schedule is on would switch it off instead. #}
+    <button class="btn primary" id="btnSaveTime" hidden>
+      {{ i.icon('check', 15) }} Save new time
+    </button>
+
+    <button class="btn" id="btnSchedule" data-enabled="{{ '1' if schedule.enabled else '0' }}">
+      {{ 'Turn off' if schedule.enabled else 'Turn on' }}
+    </button>
+  </div>
+  <p class="hint" id="scheduleMsg"></p>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>initDashboard({{ status.running | tojson }});</script>
+{% endblock %}

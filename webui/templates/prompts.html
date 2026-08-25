@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block title %}Instructions — Paper Review Automation{% endblock %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h1>{{ i.icon('wand', 18) }} What the AI is told to do</h1>
+      <p class="sub">
+        These are the instructions sent with every paper, for the
+        <strong>{{ 'grammar check' if task_mode == 'grammar' else 'full review' }}</strong>
+        setting. Editing one here changes it for future runs only.
+      </p>
+    </div>
+  </div>
+
+  {% if message %}<div class="note ok">{{ i.icon('check', 17) }}<span>{{ message }}</span></div>{% endif %}
+  {% if error %}<div class="note err">{{ i.icon('alert', 17) }}<span>{{ error }}</span></div>{% endif %}
+
+  <p class="hint">
+    Rules about not inventing results, and about which files to write, are always
+    added automatically and cannot be edited away.
+  </p>
+</section>
+
+{% for p in prompts %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('search' if p.phase == 'review' else 'wand', 17) }} {{ p.title }}</h2>
+      <p class="sub">
+        Sent to {{ p.provider }}.
+        {% if p.customised %}
+          <span class="tag pin">edited — version {{ p.active_version }}</span>
+        {% else %}
+          <span class="tag auto">using the built-in instructions</span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <form method="post" class="prompt-form">
+    <input type="hidden" name="phase" value="{{ p.phase }}">
+    <textarea name="body" rows="18" spellcheck="false"
+              aria-label="{{ p.title }} instructions">{{ p.body }}</textarea>
+
+    <p class="hint">
+      You can use
+      {% for name in p.placeholders %}<code>{{ '{' }}{{ name }}{{ '}' }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+      — each is replaced with the real value for the paper being processed.
+    </p>
+
+    <div class="controls">
+      <button type="submit" name="action" value="save" class="btn primary">
+        {{ i.icon('check', 15) }} Save and use this
+      </button>
+      {% if p.customised %}
+        <button type="submit" name="action" value="reset" class="btn">
+          Go back to the built-in instructions
+        </button>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if p.versions %}
+    <details class="tech">
+      <summary>Earlier versions ({{ p.versions|length }})</summary>
+      <table class="grid">
+        <thead>
+          <tr><th>Version</th><th>Saved</th><th>By</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for v in p.versions %}
+            <tr>
+              <td class="tnum">{{ v.version }}{% if v.active %} <span class="tag pin">in use</span>{% endif %}</td>
+              <td class="muted">{{ v.created_at }}</td>
+              <td class="muted">{{ v.created_by or '—' }}</td>
+              <td>
+                {% if not v.active %}
+                  <form method="post" class="inline">
+                    <input type="hidden" name="phase" value="{{ p.phase }}">
+                    <input type="hidden" name="version" value="{{ v.version }}">
+                    <button type="submit" name="action" value="restore" class="btn small">
+                      Use this one
+                    </button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+  {% endif %}
+</section>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h1>Past runs</h1>
+      <p class="sub">Everything that has happened, newest first.</p>
+    </div>
+    <form method="get" class="inline">
+      <label class="visually-hidden" for="monthPick">Month</label>
+      <select id="monthPick" name="month" onchange="this.form.submit()">
+        <option value="">All months</option>
+        {% for m in months %}
+          <option value="{{ m }}" {{ 'selected' if m == selected_month }}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  {% if not rows %}
+    <p class="empty">Nothing has run yet. Press Start on the Home page to begin.</p>
+  {% else %}
+    <table class="grid">
+      <thead>
+        <tr><th>When</th><th>Paper</th><th>What happened</th><th>Time</th><th>Tokens</th><th>Details</th></tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="muted">{{ r.timestamp[:16]|replace('T', ' ') }}</td>
+          <td><strong>{{ r.client }}</strong><br><span class="muted">{{ r.employee }}</span></td>
+          <td>
+            <span class="state-{{ r.state }}">{{ r.friendly }}</span>
+            {% if r.model %}<br><span class="muted" style="font-size:11.5px">{{ r.model }}</span>{% endif %}
+          </td>
+          <td class="muted tnum">{{ r.duration_label or '—' }}</td>
+          <td class="muted tnum">{{ r.tokens_label or '—' }}</td>
+          <td class="reason"><span class="why">{{ r.message or '' }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>{{ i.icon('doc', 17) }} Detailed logs</h2>
+      <p class="sub">Only needed if something went wrong and you want to see exactly why.</p>
+    </div>
+  </div>
+  {% if not logs %}
+    <p class="empty">No logs yet.</p>
+  {% else %}
+    <div class="files">
+      {% for f in logs %}
+        <button class="filelink" data-path="{{ f.path }}">
+          {{ i.icon('doc', 16) }}
+          <span class="txt"><span class="filename">{{ f.name }}</span></span>
+        </button>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('button.filelink').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const res = await fetch('/api/open', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: btn.dataset.path }),
+      }).then(r => r.json());
+      if (!res.ok) alert(res.message);
+    });
+  });
+</script>
+{% endblock %}

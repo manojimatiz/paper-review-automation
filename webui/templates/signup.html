@@ -1,0 +1,72 @@
+{% import "_icons.html" as i %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign up — Paper Review Automation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <script>
+    (function () {
+      var saved = localStorage.getItem('theme') || 'auto';
+      if (saved !== 'auto') document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+</head>
+<body class="login-page">
+  <main>
+    <section class="panel login-panel">
+      <div class="panel-head">
+        <h1>{{ i.icon('sparkle', 18) }} Request an account</h1>
+      </div>
+
+      {% if sent %}
+        <div class="note ok">{{ i.icon('check', 17) }}<span>Request sent to admin. You'll be able to sign in once it's approved.</span></div>
+        <p class="hint"><a href="{{ url_for('login') }}">Back to sign in</a></p>
+      {% else %}
+        {% if error %}
+          <div class="note err">{{ i.icon('alert', 17) }}<span>{{ error }}</span></div>
+        {% endif %}
+
+        <form method="post" class="login-form" id="signupForm">
+          <label for="username">Your name</label>
+          <input type="text" id="username" name="username" autocomplete="username"
+                 required autofocus value="{{ username }}">
+
+          <label for="role">Account type</label>
+          <select id="role" name="role">
+            <option value="WRITER" {{ 'selected' if role == 'WRITER' }}>User — I review my own papers</option>
+            <option value="ADMIN" {{ 'selected' if role == 'ADMIN' }}>Admin — I manage the whole system</option>
+          </select>
+
+          <label for="employee" id="employeeLabel">Employee folder name</label>
+          <input type="text" id="employee" name="employee" value="{{ employee }}"
+                 placeholder="Must match your folder name exactly">
+
+          <button type="submit" class="primary">Send request</button>
+        </form>
+
+        <p class="hint">
+          Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+        </p>
+      {% endif %}
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var role = document.getElementById('role');
+      var employee = document.getElementById('employee');
+      var label = document.getElementById('employeeLabel');
+      function sync() {
+        var needed = role.value === 'WRITER';
+        employee.required = needed;
+        label.style.display = needed ? '' : 'none';
+        employee.style.display = needed ? '' : 'none';
+      }
+      role.addEventListener('change', sync);
+      sync();
+    })();
+  </script>
+</body>
+</html>

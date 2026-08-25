@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% import "_icons.html" as i %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h1>Settings</h1>
+      <p class="sub">Changes are saved to your configuration file.</p>
+    </div>
+  </div>
+
+  {% if message %}<div class="note ok">{{ i.icon('check', 17) }}<span>{{ message }}</span></div>{% endif %}
+  {% if error %}<div class="note err">{{ i.icon('alert', 17) }}<span>{{ error }}</span></div>{% endif %}
+
+  <form method="post">
+    <div class="form-row">
+      <label for="research_papers_root">Papers folder</label>
+      <input type="text" id="research_papers_root" name="research_papers_root"
+             value="{{ values.research_papers_root }}">
+      <span class="help">The folder that <strong>contains</strong> your month folders — the parent of "August 2026", not the month itself.</span>
+    </div>
+
+    <div class="form-row">
+      <label for="task_mode">What the models do</label>
+      <select id="task_mode" name="task_mode">
+        <option value="grammar" {{ 'selected' if values.task_mode == 'grammar' }}>
+          Grammar only — find language errors, then produce a corrected paper (cheap)
+        </option>
+        <option value="full" {{ 'selected' if values.task_mode == 'full' }}>
+          Full review — Q1 journal review, then a scientific revision (expensive)
+        </option>
+      </select>
+      <span class="help">Grammar mode is for building and testing: it uses a fraction of the tokens and never touches your numbers or methodology. Switch to full review when you are ready to use this for real work.</span>
+    </div>
+
+    <h2 id="models" class="section-label">Models</h2>
+
+    {% for m in models.stages %}
+      <div class="form-row">
+        <label for="model_{{ m.provider }}">{{ m.stage }} stage — {{ m.role }}</label>
+        <select id="model_{{ m.provider }}" name="model_{{ m.provider }}"
+                data-other="model_{{ m.provider }}_other">
+          {% for opt in m.options %}
+            <option value="{{ opt.id }}" {{ 'selected' if opt.id == m.configured }}>
+              {{ opt.label }}{% if opt.note %} — {{ opt.note }}{% endif %}
+            </option>
+          {% endfor %}
+          <option value="__other__">Other — type a model name…</option>
+        </select>
+        <input type="text" id="model_{{ m.provider }}_other" name="model_{{ m.provider }}_other"
+               placeholder="e.g. a model announced after this was set up" hidden>
+        <span class="help">
+          {% if m.available %}
+            {{ m.role }} CLI {{ m.version }}.
+          {% else %}
+            <strong class="bad-text">Not detected.</strong>
+          {% endif %}
+          Currently uses <code>{{ m.effective }}</code>.
+          {% if m.last_used %}Last run used <code>{{ m.last_used }}</code>.{% endif %}
+        </span>
+      </div>
+    {% endfor %}
+
+    <p class="hint">
+      Aliases such as <code>opus</code> and <code>sonnet</code> always point at the newest model in
+      that family, so choosing one means this list never goes out of date. Pinned names such as
+      <code>claude-opus-5</code> stay on that exact version. Models seen in a recent session are
+      added automatically, and anything you type into <em>Other</em> is remembered for next time.
+    </p>
+    <p class="hint">
+      The Codex CLI does not publish a list of its models, so only the app default is offered until
+      one is detected or you enter it. To add models permanently, edit <code>{{ registry_path }}</code>.
+    </p>
+
+    <h2 class="section-label">Folders and behaviour</h2>
+
+    <div class="form-row">
+      <label for="timezone">Timezone</label>
+      <input type="text" id="timezone" name="timezone" value="{{ values.timezone }}">
+      <span class="help">Decides which month counts as current, independent of the machine clock.</span>
+    </div>
+
+    <div class="form-row">
+      <label for="supported_extensions">Paper file types</label>
+      <input type="text" id="supported_extensions" name="supported_extensions"
+             value="{{ values.supported_extensions }}">
+      <span class="help">Comma separated. Anything else in a client folder is ignored rather than mistaken for the manuscript.</span>
+    </div>
+
+    <div class="form-row">
+      <label for="scratch_dir">Working folder</label>
+      <input type="text" id="scratch_dir" name="scratch_dir" value="{{ values.scratch_dir }}">
+      <span class="help">Where papers are staged for the models. Leave as-is unless you have a reason — it must not sit under AppData, which the Codex sandbox refuses to write to.</span>
+    </div>
+
+    <div class="form-row">
+      <label for="max_retries">Retries per paper</label>
+      <input type="number" id="max_retries" name="max_retries" min="1" max="10"
+             value="{{ values.max_retries }}">
+      <span class="help">Applies only to temporary failures such as a timeout.</span>
+    </div>
+
+    <div class="form-row">
+      <label for="retry_base_delay">Retry delay (seconds)</label>
+      <input type="number" id="retry_base_delay" name="retry_base_delay" step="0.5" min="0"
+             value="{{ values.retry_base_delay }}">
+      <span class="help">Doubles with each attempt.</span>
+    </div>
+
+    <div class="form-row">
+      <label class="check">
+        <input type="checkbox" name="create_missing_month"
+               {{ 'checked' if values.create_missing_month }}>
+        Create the month folder if it is missing
+      </label>
+      <span class="help">Off by default. The system would rather stop than invent folders.</span>
+    </div>
+
+    <button class="btn primary" type="submit">Save settings</button>
+  </form>
+
+  <p class="hint">Written to <code>{{ config_path }}</code>. Comments in that file are preserved.</p>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>{{ i.icon('alert', 17) }} Not editable here</h2></div>
+  <p class="hint">
+    Notification credentials and the Codex/Claude binary paths are deliberately left out of this form.
+    Secrets belong in environment variables or the config file directly, not behind a browser form on a
+    machine that anyone walking past could use.
+  </p>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* Reveal the free-text box only when "Other" is chosen. */
+  document.querySelectorAll('select[data-other]').forEach(sel => {
+    const box = document.getElementById(sel.dataset.other);
+    const sync = () => { box.hidden = sel.value !== '__other__'; if (!box.hidden) box.focus(); };
+    sel.addEventListener('change', sync);
+    box.hidden = sel.value !== '__other__';
+  });
+</script>
+{% endblock %}

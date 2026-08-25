@@ -1,0 +1,38 @@
+# Python bytecode and caches
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.pytest_cache/
+
+# Logs — large, append-only, not useful for code context
+logs/
+
+# SQLite state database — binary, not readable
+state/
+
+# Scratch working files — ephemeral per-paper markdown
+# (default location is outside the project, but ignore if ever moved here)
+scratch/
+
+# Real papers — the pipeline's input/output data, not source code
+# Contains actual .docx files that are large and irrelevant to code tasks
+Papers/
+
+# Documentation binary
+docs/
+
+# NOTE: config.toml is deliberately NOT ignored. It is the first file worth
+# reading when the pipeline misbehaves, and it holds no secrets — SMTP_PASSWORD,
+# TELEGRAM_BOT_TOKEN, SLACK_WEBHOOK_URL and TEAMS_WEBHOOK_URL are read from
+# environment variables in preference to the file.
+
+# Dependency lock / virtual envs if added later
+.venv/
+venv/
+*.egg-info/
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

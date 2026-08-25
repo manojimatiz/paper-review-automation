@@ -1,0 +1,46 @@
+{% import "_icons.html" as i %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — Paper Review Automation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <script>
+    (function () {
+      var saved = localStorage.getItem('theme') || 'auto';
+      if (saved !== 'auto') document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+</head>
+<body class="login-page">
+  <main>
+    <section class="panel login-panel">
+      <div class="panel-head">
+        <h1>{{ i.icon('sparkle', 18) }} Paper Review Automation</h1>
+      </div>
+
+      {% if error %}
+        <div class="note err">{{ i.icon('alert', 17) }}<span>{{ error }}</span></div>
+      {% endif %}
+
+      <form method="post" class="login-form">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="username"
+               required autofocus value="{{ username|default('') }}">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               autocomplete="current-password" required>
+
+        <button type="submit" class="primary">Sign in</button>
+      </form>
+
+      <p class="hint">
+        New here? <a href="{{ url_for('signup') }}">Sign up</a> — an
+        administrator will need to approve it before you can sign in.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

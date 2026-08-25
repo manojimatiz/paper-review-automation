@@ -1,0 +1,27 @@
+# Install with:  py -m pip install -r requirements.txt
+#
+# Deliberately minimal. Configuration parsing uses stdlib tomllib and timezone
+# handling uses stdlib zoneinfo, so neither needs a dependency. No API client
+# libraries are required — the models are reached through the Codex and Claude
+# CLIs that ship with their desktop apps.
+
+python-docx>=1.2.0
+
+# Only needed if a Telegram/Slack/Teams notification channel is enabled.
+requests>=2.31.0
+
+# Web control panel. flask-login handles sessions for the admin/writer logins;
+# waitress serves it properly once more than one person can reach it. Password
+# hashing uses werkzeug.security, which arrives with Flask itself.
+flask>=3.0.0
+flask-login>=0.6.3
+waitress>=3.0.0
+
+# System tray icon (tray_app.py) for one-click Start/Stop and login autostart.
+# Pillow draws the tray icon image; it's already pulled in transitively, but
+# listed explicitly since tray_app.py imports it directly.
+pystray>=0.19.5
+Pillow>=10.0.0
+
+# Only needed to run the test suite.
+pytest>=8.0.0

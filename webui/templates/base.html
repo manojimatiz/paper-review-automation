@@ -1,0 +1,67 @@
+{% import "_icons.html" as i %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Paper Review Automation{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <script>
+    /* Applied before first paint so the page never flashes the wrong theme. */
+    (function () {
+      var saved = localStorage.getItem('theme') || 'auto';
+      if (saved !== 'auto') document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">{{ i.icon('sparkle', 17) }}</span>
+      <span>Paper Review Automation</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'on' if active == 'dashboard' }}">
+        {{ i.icon('home', 16) }}<span>Home</span>
+      </a>
+      <a href="{{ url_for('history') }}" class="{{ 'on' if active == 'history' }}">
+        {{ i.icon('history', 16) }}<span>Past runs</span>
+      </a>
+      {% if user.can_control_runs %}
+      <a href="{{ url_for('jobs') }}" class="{{ 'on' if active == 'jobs' }}">
+        {{ i.icon('cpu', 16) }}<span>Jobs</span>
+      </a>
+      <a href="{{ url_for('prompt_editor') }}" class="{{ 'on' if active == 'prompts' }}">
+        {{ i.icon('wand', 16) }}<span>Instructions</span>
+      </a>
+      <a href="{{ url_for('settings') }}" class="{{ 'on' if active == 'settings' }}">
+        {{ i.icon('settings', 16) }}<span>Settings</span>
+      </a>
+      {% if user.is_admin %}
+      <a href="{{ url_for('users') }}" class="{{ 'on' if active == 'users' }}">
+        {{ i.icon('inbox', 16) }}<span>Users</span>{% if pending_users %}<span class="nav-badge">{{ pending_users }}</span>{% endif %}
+      </a>
+      {% endif %}
+      {% endif %}
+    </nav>
+    <div class="theme-switch" role="group" aria-label="Appearance">
+      <button type="button" data-theme-set="light" title="Light" aria-label="Light">{{ i.icon('sun', 15) }}</button>
+      <button type="button" data-theme-set="dark" title="Dark" aria-label="Dark">{{ i.icon('moon', 15) }}</button>
+      <button type="button" data-theme-set="auto" title="Match my computer" aria-label="Match my computer">{{ i.icon('auto', 15) }}</button>
+    </div>
+    {% if auth_on %}
+    <div class="account">
+      <a href="{{ url_for('account') }}" class="account-name" title="Signed in as {{ user.username }} ({{ user.role.value }}) — change password">{{ user.username }}</a>
+      <a href="{{ url_for('logout') }}" class="account-out">Sign out</a>
+    </div>
+    {% endif %}
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
